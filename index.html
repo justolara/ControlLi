@@ -3,38 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comanda de Mesa Compartida</title>
+    <title>Calculadora de Comandas - Mesa Única</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; color: #2c3e50; }
-        .container { max-width: 600px; width: 100%; }
-        
-        h2 { border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-top: 25px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .container { max-width: 800px; width: 100%; }
+        h2 { border-bottom: 2px solid #3498db; padding-bottom: 5px; color: #2c3e50; margin-top: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
         
         /* Botones de productos */
         .btn-prod { 
-            padding: 12px 8px; border: none; border-radius: 12px; cursor: pointer; 
+            padding: 15px 10px; border: none; border-radius: 12px; cursor: pointer; 
             background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s;
-            display: flex; flex-direction: column; align-items: center; font-size: 13px;
+            display: flex; flex-direction: column; align-items: center; font-size: 14px;
         }
-        .btn-prod:active { transform: translateY(2px); }
-        .icon { font-size: 24px; margin-bottom: 5px; }
+        .btn-prod:hover { background: #fdfdfd; transform: translateY(-3px); }
+        .icon { font-size: 28px; margin-bottom: 8px; }
 
-        /* Mi Ticket Detallado (Local) */
-        .card-local { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 20px; border-top: 5px solid #f39c12; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f0f0f0; }
-        .total-local { font-size: 20px; font-weight: bold; text-align: right; margin-top: 15px; color: #e67e22; }
+        /* Ticket Local */
+        .resumen { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 30px; border-top: 5px solid #e67e22; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f0f0f0; }
+        .btn-restar { background: #ff4757; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; }
 
-        /* Liquidación de Mesa (Firebase) */
+        /* Mesa Global */
         .card-global { background: #2c3e50; color: white; padding: 20px; border-radius: 15px; margin-top: 30px; }
         .fam-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #3e5871; }
         .total-mesa { font-size: 26px; font-weight: bold; text-align: right; margin-top: 20px; color: #2ecc71; border-top: 2px solid #2ecc71; padding-top: 10px; }
 
-        /* Botones de acción */
-        .grid-familias { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn-fam { border: none; padding: 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .btn-reset { background: #95a5a6; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 15px; font-size: 11px; }
+        /* Acciones */
+        .grid-familias { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .btn-fam { border: none; padding: 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        .btn-reset { background: #7f8c8d; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -46,9 +45,167 @@
     <h2>🍴 Comidas</h2>
     <div class="grid" id="comidas"></div>
 
-    <div class="card-local">
-        <h3>📄 Mi Detalle (Local)</h3>
+    <div class="resumen">
+        <h3>📝 Mi Detalle (Local)</h3>
         <table>
-            <tbody id="lista-local"></tbody>
+            <thead>
+                <tr><th>Prod.</th><th>Cant.</th><th>Sub.</th><th></th></tr>
+            </thead>
+            <tbody id="lista-ticket"></tbody>
         </table>
-        <div class
+        <div class="total" id="total-precio" style="text-align:right; font-size:20px; font-weight:bold; margin-top:10px;">Total: 0.00€</div>
+        
+        <p style="font-size: 13px; margin-top: 20px; color: #666;">¿A qué familia sumamos este importe?</p>
+        <div class="grid-familias">
+            <button class="btn-fam" style="background:#e67e22" onclick="enviarAFirebase('Buetas')">Buetas</button>
+            <button class="btn-fam" style="background:#2980b9" onclick="enviarAFirebase('Mateus')">Mateus</button>
+            <button class="btn-fam" style="background:#8e44ad" onclick="enviarAFirebase('Laras')">Laras</button>
+            <button class="btn-fam" style="background:#27ae60" onclick="enviarAFirebase('Jimenez')">Jimenez</button>
+        </div>
+        <button class="btn-reset" onclick="resetearLocal()">Limpiar mi ticket detallado</button>
+    </div>
+
+    <div class="card-global">
+        <h3>🏠 Cuenta Total de la Mesa</h3>
+        <div id="vista-global"></div>
+        <div class="total-mesa" id="total-general">TOTAL: 0.00€</div>
+        <button onclick="resetMesaCompleta()" style="background:none; border:1px solid #7f8c8d; color:#7f8c8d; padding:5px; font-size:10px; margin-top:20px; cursor:pointer; width:100%;">Cerrar Mesa (Reset Firebase)</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // Tu configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAfG1lr-kxVgU7XL3NUzJSCTm9YdEpmis",
+        authDomain: "controlli-5b8eb.firebaseapp.com",
+        projectId: "controlli-5b8eb",
+        databaseURL: "https://controlli-5b8eb-default-rtdb.europe-west1.firebasedatabase.app",
+        storageBucket: "controlli-5b8eb.firebasestorage.app",
+        messagingSenderId: "37648477041",
+        appId: "1:37648477041:web:14e36a6b397a23513ca4d0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const productos = {
+        bebidas: [
+            { nombre: "Copa Vino", precio: 2.90, icono: "🍷" },
+            { nombre: "Botella Vino", precio: 15.30, icono: "🍾" },
+            { nombre: "Mediana Estrella", precio: 2.40, icono: "🍺" },
+            { nombre: "Copa Cerveza", precio: 2.80, icono: "🍻" },
+            { nombre: "Refresco", precio: 2.30, icono: "🥤" },
+            { nombre: "Agua Grande", precio: 2.50, icono: "💧" }
+        ],
+        comidas: [
+            { nombre: "Morro", precio: 5.80, icono: "🥓" },
+            { nombre: "Bravas", precio: 5.40, icono: "🍟" },
+            { nombre: "Torreznos", precio: 6.70, icono: "🐽" },
+            { nombre: "Olivas", precio: 2.30, icono: "🫒" }
+        ]
+    };
+
+    let cuenta = JSON.parse(localStorage.getItem('comanda_v4')) || {};
+
+    function renderizarBotones() {
+        Object.keys(productos).forEach(cat => {
+            const div = document.getElementById(cat);
+            productos[cat].forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-prod';
+                btn.innerHTML = `<span class="icon">${p.icono}</span> <span>${p.nombre}</span> <b>${p.precio.toFixed(2)}€</b>`;
+                btn.onclick = () => añadir(p.nombre, p.precio);
+                div.appendChild(btn);
+            });
+        });
+    }
+
+    window.añadir = function(nombre, precio) {
+        if (!cuenta[nombre]) cuenta[nombre] = { cantidad: 0, precio: precio };
+        cuenta[nombre].cantidad++;
+        actualizarVista();
+    }
+
+    window.restar = function(nombre) {
+        if (cuenta[nombre]) {
+            cuenta[nombre].cantidad--;
+            if (cuenta[nombre].cantidad <= 0) delete cuenta[nombre];
+            actualizarVista();
+        }
+    }
+
+    function actualizarVista() {
+        const lista = document.getElementById('lista-ticket');
+        const totalElem = document.getElementById('total-precio');
+        lista.innerHTML = "";
+        let total = 0;
+
+        Object.keys(cuenta).forEach(p => {
+            const subtotal = cuenta[p].cantidad * cuenta[p].precio;
+            total += subtotal;
+            lista.innerHTML += `<tr>
+                <td>${p}</td>
+                <td>${cuenta[p].cantidad}</td>
+                <td>${subtotal.toFixed(2)}€</td>
+                <td><button class="btn-restar" onclick="restar('${p}')">-</button></td>
+            </tr>`;
+        });
+
+        totalElem.innerText = `Mi detalle: ${total.toFixed(2)}€`;
+        localStorage.setItem('comanda_v4', JSON.stringify(cuenta));
+    }
+
+    // --- FIREBASE ---
+    window.enviarAFirebase = function(familia) {
+        let totalSesion = 0;
+        Object.keys(cuenta).forEach(n => totalSesion += (cuenta[n].cantidad * cuenta[n].precio));
+        if(totalSesion === 0) return alert("El ticket está vacío.");
+
+        const famRef = ref(db, `mesa_actual/${familia}`);
+        runTransaction(famRef, (current) => {
+            return (current || 0) + totalSesion;
+        }).then(() => {
+            alert(`Sumado a la cuenta común de ${familia}.`);
+        });
+    }
+
+    onValue(ref(db, 'mesa_actual'), (snapshot) => {
+        const data = snapshot.val() || {};
+        const vista = document.getElementById('vista-global');
+        vista.innerHTML = "";
+        let totalGeneral = 0;
+        const familias = ["Buetas", "Mateus", "Laras", "Jimenez"];
+        const colores = { Buetas: "#e67e22", Mateus: "#2980b9", Laras: "#8e44ad", Jimenez: "#27ae60" };
+
+        familias.forEach(f => {
+            const gasto = data[f] || 0;
+            totalGeneral += gasto;
+            vista.innerHTML += `<div class="fam-row">
+                <span style="color:${colores[f]}; font-weight:bold;">${f}</span>
+                <span style="font-weight:bold;">${gasto.toFixed(2)}€</span>
+            </div>`;
+        });
+        document.getElementById('total-general').innerText = `TOTAL MESA: ${totalGeneral.toFixed(2)}€`;
+    });
+
+    window.resetearLocal = function() {
+        if(confirm("¿Borrar tu detalle local?")) {
+            cuenta = {};
+            actualizarVista();
+        }
+    }
+
+    window.resetMesaCompleta = function() {
+        if(confirm("¿Resetear toda la mesa en Firebase?")) {
+            set(ref(db, 'mesa_actual'), { Buetas:0, Mateus:0, Laras:0, Jimenez:0 });
+        }
+    }
+
+    renderizarBotones();
+    actualizarVista();
+</script>
+</body>
+</html>
