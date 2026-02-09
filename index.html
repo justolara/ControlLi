@@ -23,7 +23,8 @@
         .resumen { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 30px; border-top: 5px solid #e67e22; }
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f0f0f0; }
-        .btn-restar { background: #ff4757; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; }
+        .btn-restar { background: #ff4757; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; }
+        .btn-sumar { background: #2ecc71; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; }
 
         /* Mesa Global */
         .card-global { background: #2c3e50; color: white; padding: 20px; border-radius: 15px; margin-top: 30px; }
@@ -49,7 +50,7 @@
         <h3>📝 Mi Detalle (Local)</h3>
         <table>
             <thead>
-                <tr><th>Prod.</th><th>Cant.</th><th>Sub.</th><th></th></tr>
+                <tr><th>Prod.</th><th>Cant.</th><th>Sub.</th><th>Acción</th></tr>
             </thead>
             <tbody id="lista-ticket"></tbody>
         </table>
@@ -59,7 +60,7 @@
         <div class="grid-familias">
             <button class="btn-fam" style="background:#e67e22" onclick="enviarAFirebase('BF')">BF</button>
             <button class="btn-fam" style="background:#2980b9" onclick="enviarAFirebase('ML')">ML</button>
-            <button class="btn-fam" style="background:#8e44ad" onclick="enviarAFirebase('JL')">JL</button>
+            <button class="btn-fam" style="background:#8e44ad" onclick="enviarAFirebase('LM')">LM</button>
             <button class="btn-fam" style="background:#27ae60" onclick="enviarAFirebase('EJ')">EJ</button>
         </div>
         <button class="btn-reset" onclick="resetearLocal()">Limpiar mi ticket detallado</button>
@@ -77,7 +78,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, set, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // Tu configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBAfG1lr-kxVgU7XL3NUzJSCTm9YdEpmis",
         authDomain: "controlli-5b8eb.firebaseapp.com",
@@ -93,27 +93,27 @@
 
     const productos = {
         bebidas: [
-        { nombre: "Copa Vino", precio: 2.90, icono: "🍷" },
-        { nombre: "Botella Vino", precio: 15.30, icono: "🍾" },
-        { nombre: "Botella Vino 1/2", precio: 7.65, icono: "🍷" },
-        { nombre: "Botella Vino 1/3", precio: 5.10, icono: "🍷" },
-        { nombre: "Botella Vino 1/4", precio: 3.83, icono: "🍷" },
-        { nombre: "Botella Vino 1/5", precio: 3.06, icono: "🍷" },
-        { nombre: "Mediana Estrella", precio: 2.40, icono: "🍺" },
-        { nombre: "Mediana Galicia", precio: 2.40, icono: "🍺" },
-        { nombre: "Copa Cerveza", precio: 2.80, icono: "🍻" },
-        { nombre: "Quinto", precio: 1.80, icono: "🍺" },
-        { nombre: "Refresco", precio: 2.30, icono: "🥤" },
-        { nombre: "Zumo", precio: 2.40, icono: "🥤" },
-        { nombre: "Agua Grande", precio: 2.50, icono: "💧" },
-        { nombre: "Agua Pequeña", precio: 1.50, icono: "💧" }
+            { nombre: "Copa Vino", precio: 2.90, icono: "🍷" },
+            { nombre: "Botella Vino", precio: 15.30, icono: "🍾" },
+            { nombre: "Botella Vino 1/2", precio: 7.65, icono: "🍷" },
+            { nombre: "Botella Vino 1/3", precio: 5.10, icono: "🍷" },
+            { nombre: "Botella Vino 1/4", precio: 3.83, icono: "🍷" },
+            { nombre: "Botella Vino 1/5", precio: 3.06, icono: "🍷" },
+            { nombre: "Mediana Estrella", precio: 2.40, icono: "🍺" },
+            { nombre: "Mediana Galicia", precio: 2.40, icono: "🍺" },
+            { nombre: "Copa Cerveza", precio: 2.80, icono: "🍻" },
+            { nombre: "Quinto", precio: 1.80, icono: "🍺" },
+            { nombre: "Refresco", precio: 2.30, icono: "🥤" },
+            { nombre: "Zumo", precio: 2.40, icono: "🥤" },
+            { nombre: "Agua Grande", precio: 2.50, icono: "💧" },
+            { nombre: "Agua Pequeña", precio: 1.50, icono: "💧" }
         ],
         comidas: [
-        { nombre: "Morro", precio: 5.80, icono: "🥓" },
-        { nombre: "Bravas", precio: 5.40, icono: "🍟" },
-        { nombre: "Patatas F.", precio: 3.50, icono: "🍟" },
-        { nombre: "Torreznos", precio: 6.70, icono: "🐽" },
-        { nombre: "Olivas", precio: 2.30, icono: "🫒" }
+            { nombre: "Morro", precio: 5.80, icono: "🥓" },
+            { nombre: "Bravas", precio: 5.40, icono: "🍟" },
+            { nombre: "Patatas F.", precio: 3.50, icono: "🍟" },
+            { nombre: "Torreznos", precio: 6.70, icono: "🐽" },
+            { nombre: "Olivas", precio: 2.30, icono: "🫒" }
         ]
     };
 
@@ -122,6 +122,7 @@
     function renderizarBotones() {
         Object.keys(productos).forEach(cat => {
             const div = document.getElementById(cat);
+            div.innerHTML = "";
             productos[cat].forEach(p => {
                 const btn = document.createElement('button');
                 btn.className = 'btn-prod';
@@ -153,13 +154,17 @@
         let total = 0;
 
         Object.keys(cuenta).forEach(p => {
-            const subtotal = cuenta[p].cantidad * cuenta[p].precio;
+            const item = cuenta[p];
+            const subtotal = item.cantidad * item.precio;
             total += subtotal;
             lista.innerHTML += `<tr>
                 <td>${p}</td>
-                <td>${cuenta[p].cantidad}</td>
+                <td>${item.cantidad}</td>
                 <td>${subtotal.toFixed(2)}€</td>
-                <td><button class="btn-restar" onclick="restar('${p}')">-</button></td>
+                <td style="white-space: nowrap;">
+                    <button class="btn-sumar" onclick="añadir('${p}', ${item.precio})">+</button>
+                    <button class="btn-restar" onclick="restar('${p}')">-</button>
+                </td>
             </tr>`;
         });
 
@@ -167,54 +172,11 @@
         localStorage.setItem('comanda_v4', JSON.stringify(cuenta));
     }
 
-    // --- FIREBASE ---
-    window.enviarAFirebase = function(familia) {
+    window.enviarAFirebase = function(sigla) {
         let totalSesion = 0;
         Object.keys(cuenta).forEach(n => totalSesion += (cuenta[n].cantidad * cuenta[n].precio));
         if(totalSesion === 0) return alert("El ticket está vacío.");
 
-        const famRef = ref(db, `mesa_actual/${familia}`);
+        const famRef = ref(db, `mesa_actual/${sigla}`);
         runTransaction(famRef, (current) => {
-            return (current || 0) + totalSesion;
-        }).then(() => {
-            alert(`Sumado a la cuenta común de ${familia}.`);
-        });
-    }
-
-    onValue(ref(db, 'mesa_actual'), (snapshot) => {
-        const data = snapshot.val() || {};
-        const vista = document.getElementById('vista-global');
-        vista.innerHTML = "";
-        let totalGeneral = 0;
-        const familias = ["BF", "ML", "LM", "EJ"];
-        const colores = { BF: "#e67e22", ML: "#2980b9", LM: "#8e44ad", EJ: "#27ae60" };
-
-        familias.forEach(f => {
-            const gasto = data[f] || 0;
-            totalGeneral += gasto;
-            vista.innerHTML += `<div class="fam-row">
-                <span style="color:${colores[f]}; font-weight:bold;">${f}</span>
-                <span style="font-weight:bold;">${gasto.toFixed(2)}€</span>
-            </div>`;
-        });
-        document.getElementById('total-general').innerText = `TOTAL MESA: ${totalGeneral.toFixed(2)}€`;
-    });
-
-    window.resetearLocal = function() {
-        if(confirm("¿Borrar tu detalle local?")) {
-            cuenta = {};
-            actualizarVista();
-        }
-    }
-
-    window.resetMesaCompleta = function() {
-        if(confirm("¿Resetear toda la mesa en Firebase?")) {
-            set(ref(db, 'mesa_actual'), { BF:0, ML:0, LM:0, EJ:0 });
-        }
-    }
-
-    renderizarBotones();
-    actualizarVista();
-</script>
-</body>
-</html>
+            return (current || 0)
