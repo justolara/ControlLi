@@ -16,7 +16,6 @@
         h2 { border-bottom: 2px solid #3498db; padding-bottom: 5px; color: #2c3e50; margin-top: 30px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
         
-        /* Botones de productos */
         .btn-prod { 
             padding: 15px 10px; border: none; border-radius: 12px; cursor: pointer; 
             background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s;
@@ -25,19 +24,16 @@
         .btn-prod:hover { background: #fdfdfd; transform: translateY(-3px); }
         .icon { font-size: 28px; margin-bottom: 8px; }
 
-        /* Ticket Local */
         .resumen { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 30px; border-top: 5px solid #e67e22; }
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f0f0f0; }
         .btn-restar { background: #ff4757; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; }
         .btn-sumar { background: #2ecc71; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; }
 
-        /* Mesa Global */
         .card-global { background: #2c3e50; color: white; padding: 20px; border-radius: 15px; margin-top: 30px; }
         .fam-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #3e5871; }
         .total-mesa { font-size: 26px; font-weight: bold; text-align: right; margin-top: 20px; color: #2ecc71; border-top: 2px solid #2ecc71; padding-top: 10px; }
 
-        /* Acciones */
         .grid-familias { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
         .btn-fam { border: none; padding: 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
         .btn-reset { background: #7f8c8d; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
@@ -185,4 +181,48 @@
 
         const famRef = ref(db, `mesa_actual/${sigla}`);
         runTransaction(famRef, (current) => {
-            return (current || 0)
+            return (current || 0) + totalSesion;
+        }).then(() => {
+            cuenta = {};
+            actualizarVista();
+            alert(`Enviado correctamente a ${sigla}`);
+        }).catch(err => alert("Error al enviar: " + err.message));
+    }
+
+    onValue(ref(db, 'mesa_actual'), (snapshot) => {
+        const data = snapshot.val() || {};
+        const vista = document.getElementById('vista-global');
+        vista.innerHTML = "";
+        let totalGeneral = 0;
+        const familias = ["BF", "ML", "LM", "EJ"];
+        const colores = { BF: "#e67e22", ML: "#2980b9", LM: "#8e44ad", EJ: "#27ae60" };
+
+        familias.forEach(f => {
+            const gasto = data[f] || 0;
+            totalGeneral += gasto;
+            vista.innerHTML += `<div class="fam-row">
+                <span style="color:${colores[f]}; font-weight:bold;">${f}</span>
+                <span style="font-weight:bold;">${gasto.toFixed(2)}€</span>
+            </div>`;
+        });
+        document.getElementById('total-general').innerText = `TOTAL MESA: ${totalGeneral.toFixed(2)}€`;
+    });
+
+    window.resetearLocal = function() {
+        if(confirm("¿Borrar tu detalle local?")) {
+            cuenta = {};
+            actualizarVista();
+        }
+    }
+
+    window.resetMesaCompleta = function() {
+        if(confirm("¿Resetear toda la mesa en Firebase?")) {
+            set(ref(db, 'mesa_actual'), { BF:0, ML:0, LM:0, EJ:0 });
+        }
+    }
+
+    renderizarBotones();
+    actualizarVista();
+</script>
+</body>
+</html>
