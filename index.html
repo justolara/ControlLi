@@ -186,8 +186,8 @@
         const vista = document.getElementById('vista-global');
         vista.innerHTML = "";
         let totalGeneral = 0;
-        const familias = ["Buetas", "Mateus", "Laras", "Jimenez"];
-        const colores = { Buetas: "#e67e22", Mateus: "#2980b9", Laras: "#8e44ad", Jimenez: "#27ae60" };
+        const familias = ["BF", "ML", "LM", "EJ"];
+        const colores = { BF: "#e67e22", ML: "#2980b9", LM: "#8e44ad", EJ: "#27ae60" };
 
         familias.forEach(f => {
             const gasto = data[f] || 0;
@@ -209,7 +209,7 @@
 
     window.resetMesaCompleta = function() {
         if(confirm("¿Resetear toda la mesa en Firebase?")) {
-            set(ref(db, 'mesa_actual'), { Buetas:0, Mateus:0, Laras:0, Jimenez:0 });
+            set(ref(db, 'mesa_actual'), { BF:0, ML:0, LM:0, EJ:0 });
         }
     }
 
