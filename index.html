@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comanda Familiar - Detalle Local</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 600px; width: 100%; }
+        
+        /* Carta de Productos */
+        .grid-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 25px; }
+        .btn-prod { background: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; font-size: 13px; }
+        .btn-prod:active { transform: scale(0.95); }
+
+        /* Mi Ticket (DETALLADO Y LOCAL) */
+        .card-local { background: #ffffff; padding: 20px; border-radius: 15px; border-top: 5px solid #f39c12; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .item-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 14px; }
+        
+        /* Mesa Global (RESUMEN FIREBASE) */
+        .card-global { background: #2c3e50; color: white; padding: 20px; border-radius: 15px; }
+        .fam-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #3e5871; }
+        .total-mesa { font-size: 24px; text-align: right; margin-top: 15px; color: #2ecc71; font-weight: bold; }
+
+        /* Botones de Selección de Familia */
+        .selector-familia { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .btn-fam { border: none; padding: 10px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; opacity: 0.8; }
+        .btn-fam:hover { opacity: 1; }
+        
+        .btn-reset-local { background: #e74c3c; color: white; border: none; padding: 8px; border-radius: 5px; margin-top: 15px; cursor: pointer; width: 100%; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🍽️ Carta</h2>
+    <div class="grid-productos" id="carta"></div>
+
+    <div class="card-local">
+        <h3>📄 Mi Detalle (Local)</h3>
+        <div id="detalle-productos">
+            </div>
+        <div id="total-local" style="text-align:right; font-weight:bold; font-size:18px; margin-top:10px;">Parte actual: 0.00€</div>
+        
+        <div style="background: #fdf2e9; padding: 10px; border-radius: 8px; margin-top: 15px;">
+            <p style="margin:0 0 10px 0; font-size: 13px; color: #d35400;"><b>Subir estos productos a la cuenta común:</b></p>
+            <div class="selector-familia">
+                <button class="btn-fam" style="background:#e67e22" onclick="confirmarEnvio('Buetas')">Soy Buetas</button>
+                <button class="btn-fam" style="background:#2980b9" onclick="confirmarEnvio('Mateus')">Soy Mateus</button>
+                <button class="btn-fam" style="background:#8e44ad" onclick="confirmarEnvio('Laras')">Soy Laras</button>
+                <button class="btn-fam" style="background:#27ae60" onclick="confirmarEnvio('Jimenez')">Soy Jimenez</button>
+            </div>
+        </div>
+        <button class="btn-reset-local" onclick="resetLocal()">Limpiar mi ticket detallado</button>
+    </div>
+
+    <div class="card-global">
+        <h3>🌍 Total Mesa (Compartido)</h3>
+        <div id="vista-global"></div>
+        <div id="total-general" class="total-mesa">TOTAL: 0.00€</div>
+        <button onclick="resetFirebase()" style="background:transparent; color:#95a5a6; border:1px solid #95a5a6; padding:5px; font-size:10px; margin-top:15px; cursor:pointer;">Cerrar Mesa Completa</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // CONFIGURACIÓN FIREBASE
+    const firebaseConfig = {
+        apiKey: "TU_API_KEY",
+        databaseURL: "https://TU_PROYECTO.firebaseio.com",
+        projectId: "TU_PROYECTO",
+        appId: "TU_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const productos = [
+        { n: "Copa Vino", p: 2.90, i: "🍷" },
+        { n: "Cerveza", p: 2.40, i: "🍺" },
+        { n: "Bravas", p: 5.40, i: "🍟" },
+        { n: "Morro", p: 5.80, i: "🥓" },
+        { n: "Refresco", p: 2.30, i: "🥤" }
+    ];
+
+    // Estado local: detalle de qué hemos pedido
+    let miTicket = JSON.parse(localStorage.getItem('ticket_detallado')) || {};
+
+    // 1. Renderizar Carta
+    const cartaDiv = document.getElementById('carta');
+    productos.forEach(prod => {
+        const b = document.createElement('button');
+        b.className = 'btn-prod';
+        b.innerHTML = `${prod.i}<br>${prod.n}<br><b>${prod.p.toFixed(2)}€</b>`;
+        b.onclick = () => {
+            if(!miTicket[prod.n]) miTicket[prod.n] = { cant: 0, precio: prod.p };
+            miTicket[prod.n].cant++;
+            renderLocal();
+        };
+        cartaDiv.appendChild(b);
+    });
+
+    // 2. Lógica Local (Detalle)
+    function renderLocal() {
+        localStorage.setItem('ticket_detallado', JSON.stringify(miTicket));
+        const cont = document.getElementById('detalle-productos');
+        cont.innerHTML = "";
+        let suma = 0;
+        
+        Object.keys(miTicket).forEach(nombre => {
+            const item = miTicket[nombre];
+            const sub = item.cant * item.precio;
+            suma += sub;
+            cont.innerHTML += `
+                <div class="item-row">
+                    <span>${nombre} (x${item.cant})</span>
+                    <span>${sub.toFixed(2)}€</span>
+                </div>`;
+        });
+        document.getElementById('total-local').innerText = `Mi detalle: ${suma.toFixed(2)}€`;
+    }
+
+    // 3. Lógica Firebase (Sincronización de importes)
+    window.confirmarEnvio = function(familia) {
+        let totalSesion = 0;
+        Object.keys(miTicket).forEach(n => totalSesion += (miTicket[n].cant * miTicket[n].precio));
+        
+        if(totalSesion === 0) return alert("No has marcado productos.");
+
+        // Subimos solo el dinero a Firebase
+        const famRef = ref(db, `mesa_actual/${familia}`);
+        runTransaction(famRef, (current) => {
+            return (current || 0) + totalSesion;
+        }).then(() => {
+            alert(`Enviados ${totalSesion.toFixed(2)}€ a la cuenta común.`);
+            // Nota: Aquí NO borramos miTicket para que el usuario mantenga su detalle local
+        });
+    };
+
+    onValue(ref(db, 'mesa_actual'), (snapshot) => {
+        const data = snapshot.val() || {};
+        const cont = document.getElementById('vista-global');
+        cont.innerHTML = "";
+        let totalMesa = 0;
+        const familias = ["Buetas", "Mateus", "Laras", "Jimenez"];
+
+        familias.forEach(f => {
+            const gasto = data[f] || 0;
+            totalMesa += gasto;
+            cont.innerHTML += `
+                <div class="fam-row">
+                    <span>Familia <b>${f}</b></span>
+                    <span>${gasto.toFixed(2)}€</span>
+                </div>`;
+        });
+        document.getElementById('total-general').innerText = `TOTAL: ${totalMesa.toFixed(2)}€`;
+    });
+
+    window.resetLocal = function() {
+        if(confirm("¿Borrar tu detalle de productos local?")) {
+            miTicket = {};
+            renderLocal();
+        }
+    };
+
+    window.resetFirebase = function() {
+        if(confirm("¿Resetear la cuenta común de la mesa?")) {
+            set(ref(db, 'mesa_actual'), { Buetas:0, Mateus:0, Laras:0, Jimenez:0 });
+        }
+    };
+
+    renderLocal();
+</script>
+
+</body>
+</html>
