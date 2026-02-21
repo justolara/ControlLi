@@ -31,7 +31,11 @@
         .btn-sumar { background: #2ecc71; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; }
 
         .card-global { background: #2c3e50; color: white; padding: 20px; border-radius: 15px; margin-top: 30px; }
-        .fam-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #3e5871; }
+        /* Ajuste para que los elementos se repartan: Familia - Importe - Borrar */
+        .fam-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #3e5871; }
+        .fam-name { flex: 1; font-weight: bold; }
+        .fam-amount { font-weight: bold; margin-right: 15px; }
+        
         .total-mesa { font-size: 26px; font-weight: bold; text-align: right; margin-top: 20px; color: #2ecc71; border-top: 2px solid #2ecc71; padding-top: 10px; }
 
         .grid-familias { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
@@ -40,7 +44,7 @@
         
         .status-enviado { font-size: 13px; color: #27ae60; font-weight: bold; margin-top: 10px; display: none; text-align: center; background: #e8f5e9; padding: 8px; border-radius: 5px; }
         
-        .btn-del-fam { background: none; border: 1px solid #ff4757; color: #ff4757; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; margin-left: 10px; transition: 0.3s; }
+        .btn-del-fam { background: none; border: 1px solid #ff4757; color: #ff4757; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 14px; transition: 0.3s; }
         .btn-del-fam:hover { background: #ff4757; color: white; }
     </style>
 </head>
@@ -209,7 +213,6 @@
         }).catch(err => alert("Error al enviar: " + err.message));
     }
 
-    // --- NUEVA FUNCIÓN: Limpiar solo una familia ---
     window.limpiarFamilia = function(sigla) {
         if(confirm(`¿Deseas poner a cero el importe de la familia ${sigla}?`)) {
             set(ref(db, `mesa_actual/${sigla}`), 0)
@@ -231,11 +234,9 @@
             totalGeneral += gasto;
             vista.innerHTML += `
                 <div class="fam-row">
-                    <div>
-                        <span style="color:${colores[f]}; font-weight:bold;">${f}</span>
-                        <button class="btn-del-fam" onclick="limpiarFamilia('${f}')">🗑️</button>
-                    </div>
-                    <span style="font-weight:bold;">${gasto.toFixed(2)}€</span>
+                    <span class="fam-name" style="color:${colores[f]};">${f}</span>
+                    <span class="fam-amount">${gasto.toFixed(2)}€</span>
+                    <button class="btn-del-fam" onclick="limpiarFamilia('${f}')">🗑️</button>
                 </div>`;
         });
         document.getElementById('total-general').innerText = `TOTAL MESA: ${totalGeneral.toFixed(2)}€`;
