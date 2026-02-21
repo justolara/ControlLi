@@ -37,6 +37,9 @@
         .grid-familias { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
         .btn-fam { border: none; padding: 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
         .btn-reset { background: #7f8c8d; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
+        
+        /* Estilo para avisar que el ticket ya se envió */
+        .status-enviado { font-size: 12px; color: #27ae60; font-weight: bold; margin-top: 5px; display: none; }
     </style>
 </head>
 <body>
@@ -57,6 +60,7 @@
             <tbody id="lista-ticket"></tbody>
         </table>
         <div class="total" id="total-precio" style="text-align:right; font-size:20px; font-weight:bold; margin-top:10px;">Total: 0.00€</div>
+        <div id="aviso-enviado" class="status-enviado">✓ Este importe ya ha sido compartido con la mesa.</div>
         
         <p style="font-size: 13px; margin-top: 20px; color: #666;">¿A qué familia sumamos este importe?</p>
         <div class="grid-familias">
@@ -120,6 +124,8 @@
     };
 
     let cuenta = JSON.parse(localStorage.getItem('comanda_v4')) || {};
+    // Guardamos cuánto se ha enviado ya para evitar duplicados
+    let totalYaEnviado = parseFloat(localStorage.getItem('enviado_v4')) || 0;
 
     function renderizarBotones() {
         Object.keys(productos).forEach(cat => {
@@ -152,6 +158,7 @@
     function actualizarVista() {
         const lista = document.getElementById('lista-ticket');
         const totalElem = document.getElementById('total-precio');
+        const aviso = document.getElementById('aviso-enviado');
         lista.innerHTML = "";
         let total = 0;
 
@@ -171,22 +178,38 @@
         });
 
         totalElem.innerText = `Mi detalle: ${total.toFixed(2)}€`;
+        
+        // Mostrar aviso si el total actual ya se envió
+        if (total > 0 && total === totalYaEnviado) {
+            aviso.style.display = "block";
+        } else {
+            aviso.style.display = "none";
+            if (total !== totalYaEnviado) totalYaEnviado = 0; // Reset si el ticket cambia
+        }
+
         localStorage.setItem('comanda_v4', JSON.stringify(cuenta));
+        localStorage.setItem('enviado_v4', totalYaEnviado);
     }
 
     window.enviarAFirebase = function(sigla) {
         let totalSesion = 0;
         Object.keys(cuenta).forEach(n => totalSesion += (cuenta[n].cantidad * cuenta[n].precio));
+        
         if(totalSesion === 0) return alert("El ticket está vacío.");
+        if(totalSesion === totalYaEnviado) return alert("Este importe ya ha sido enviado a la mesa.");
 
-        const famRef = ref(db, `mesa_actual/${sigla}`);
-        runTransaction(famRef, (current) => {
-            return (current || 0) + totalSesion;
-        }).then(() => {
-            cuenta = {};
-            actualizarVista();
-            alert(`Enviado correctamente a ${sigla}`);
-        }).catch(err => alert("Error al enviar: " + err.message));
+        if(confirm(`¿Enviar ${totalSesion.toFixed(2)}€ a la familia ${sigla}?`)) {
+            const famRef = ref(db, `mesa_actual/${sigla}`);
+            runTransaction(famRef, (current) => {
+                return (current || 0) + totalSesion;
+            }).then(() => {
+                // IMPORTANTE: Ya no reseteamos 'cuenta'.
+                // Marcamos el total como enviado para control local.
+                totalYaEnviado = totalSesion;
+                actualizarVista();
+                alert(`¡Enviado! Tu ticket sigue guardado pero el importe ya sumó a la mesa.`);
+            }).catch(err => alert("Error al enviar: " + err.message));
+        }
     }
 
     onValue(ref(db, 'mesa_actual'), (snapshot) => {
@@ -211,6 +234,7 @@
     window.resetearLocal = function() {
         if(confirm("¿Borrar tu detalle local?")) {
             cuenta = {};
+            totalYaEnviado = 0;
             actualizarVista();
         }
     }
