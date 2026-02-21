@@ -38,8 +38,7 @@
         .btn-fam { border: none; padding: 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
         .btn-reset { background: #7f8c8d; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
         
-        /* Estilo para avisar que el ticket ya se envió */
-        .status-enviado { font-size: 12px; color: #27ae60; font-weight: bold; margin-top: 5px; display: none; }
+        .status-enviado { font-size: 13px; color: #27ae60; font-weight: bold; margin-top: 10px; display: none; text-align: center; background: #e8f5e9; padding: 8px; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -60,8 +59,9 @@
             <tbody id="lista-ticket"></tbody>
         </table>
         <div class="total" id="total-precio" style="text-align:right; font-size:20px; font-weight:bold; margin-top:10px;">Total: 0.00€</div>
-        <div id="aviso-enviado" class="status-enviado">✓ Este importe ya ha sido compartido con la mesa.</div>
         
+        <div id="aviso-enviado" class="status-enviado">✓ Importe ya compartido con la mesa</div>
+
         <p style="font-size: 13px; margin-top: 20px; color: #666;">¿A qué familia sumamos este importe?</p>
         <div class="grid-familias">
             <button class="btn-fam" style="background:#e67e22" onclick="enviarAFirebase('BF')">BF</button>
@@ -110,143 +110,4 @@
             { nombre: "Copa Cerveza", precio: 2.80, icono: "🍻" },
             { nombre: "Quinto", precio: 1.80, icono: "🍺" },
             { nombre: "Refresco", precio: 2.30, icono: "🥤" },
-            { nombre: "Zumo", precio: 2.40, icono: "🥤" },
-            { nombre: "Agua Grande", precio: 2.50, icono: "💧" },
-            { nombre: "Agua Pequeña", precio: 1.50, icono: "💧" }
-        ],
-        comidas: [
-            { nombre: "Morro", precio: 5.80, icono: "🥓" },
-            { nombre: "Bravas", precio: 5.40, icono: "🍟" },
-            { nombre: "Patatas F.", precio: 3.50, icono: "🍟" },
-            { nombre: "Torreznos", precio: 6.70, icono: "🐽" },
-            { nombre: "Olivas", precio: 2.30, icono: "🫒" }
-        ]
-    };
-
-    let cuenta = JSON.parse(localStorage.getItem('comanda_v4')) || {};
-    // Guardamos cuánto se ha enviado ya para evitar duplicados
-    let totalYaEnviado = parseFloat(localStorage.getItem('enviado_v4')) || 0;
-
-    function renderizarBotones() {
-        Object.keys(productos).forEach(cat => {
-            const div = document.getElementById(cat);
-            div.innerHTML = "";
-            productos[cat].forEach(p => {
-                const btn = document.createElement('button');
-                btn.className = 'btn-prod';
-                btn.innerHTML = `<span class="icon">${p.icono}</span> <span>${p.nombre}</span> <b>${p.precio.toFixed(2)}€</b>`;
-                btn.onclick = () => añadir(p.nombre, p.precio);
-                div.appendChild(btn);
-            });
-        });
-    }
-
-    window.añadir = function(nombre, precio) {
-        if (!cuenta[nombre]) cuenta[nombre] = { cantidad: 0, precio: precio };
-        cuenta[nombre].cantidad++;
-        actualizarVista();
-    }
-
-    window.restar = function(nombre) {
-        if (cuenta[nombre]) {
-            cuenta[nombre].cantidad--;
-            if (cuenta[nombre].cantidad <= 0) delete cuenta[nombre];
-            actualizarVista();
-        }
-    }
-
-    function actualizarVista() {
-        const lista = document.getElementById('lista-ticket');
-        const totalElem = document.getElementById('total-precio');
-        const aviso = document.getElementById('aviso-enviado');
-        lista.innerHTML = "";
-        let total = 0;
-
-        Object.keys(cuenta).forEach(p => {
-            const item = cuenta[p];
-            const subtotal = item.cantidad * item.precio;
-            total += subtotal;
-            lista.innerHTML += `<tr>
-                <td>${p}</td>
-                <td>${item.cantidad}</td>
-                <td>${subtotal.toFixed(2)}€</td>
-                <td style="white-space: nowrap;">
-                    <button class="btn-sumar" onclick="añadir('${p}', ${item.precio})">+</button>
-                    <button class="btn-restar" onclick="restar('${p}')">-</button>
-                </td>
-            </tr>`;
-        });
-
-        totalElem.innerText = `Mi detalle: ${total.toFixed(2)}€`;
-        
-        // Mostrar aviso si el total actual ya se envió
-        if (total > 0 && total === totalYaEnviado) {
-            aviso.style.display = "block";
-        } else {
-            aviso.style.display = "none";
-            if (total !== totalYaEnviado) totalYaEnviado = 0; // Reset si el ticket cambia
-        }
-
-        localStorage.setItem('comanda_v4', JSON.stringify(cuenta));
-        localStorage.setItem('enviado_v4', totalYaEnviado);
-    }
-
-    window.enviarAFirebase = function(sigla) {
-        let totalSesion = 0;
-        Object.keys(cuenta).forEach(n => totalSesion += (cuenta[n].cantidad * cuenta[n].precio));
-        
-        if(totalSesion === 0) return alert("El ticket está vacío.");
-        if(totalSesion === totalYaEnviado) return alert("Este importe ya ha sido enviado a la mesa.");
-
-        if(confirm(`¿Enviar ${totalSesion.toFixed(2)}€ a la familia ${sigla}?`)) {
-            const famRef = ref(db, `mesa_actual/${sigla}`);
-            runTransaction(famRef, (current) => {
-                return (current || 0) + totalSesion;
-            }).then(() => {
-                // IMPORTANTE: Ya no reseteamos 'cuenta'.
-                // Marcamos el total como enviado para control local.
-                totalYaEnviado = totalSesion;
-                actualizarVista();
-                alert(`¡Enviado! Tu ticket sigue guardado pero el importe ya sumó a la mesa.`);
-            }).catch(err => alert("Error al enviar: " + err.message));
-        }
-    }
-
-    onValue(ref(db, 'mesa_actual'), (snapshot) => {
-        const data = snapshot.val() || {};
-        const vista = document.getElementById('vista-global');
-        vista.innerHTML = "";
-        let totalGeneral = 0;
-        const familias = ["BF", "ML", "LM", "EJ"];
-        const colores = { BF: "#e67e22", ML: "#2980b9", LM: "#8e44ad", EJ: "#27ae60" };
-
-        familias.forEach(f => {
-            const gasto = data[f] || 0;
-            totalGeneral += gasto;
-            vista.innerHTML += `<div class="fam-row">
-                <span style="color:${colores[f]}; font-weight:bold;">${f}</span>
-                <span style="font-weight:bold;">${gasto.toFixed(2)}€</span>
-            </div>`;
-        });
-        document.getElementById('total-general').innerText = `TOTAL MESA: ${totalGeneral.toFixed(2)}€`;
-    });
-
-    window.resetearLocal = function() {
-        if(confirm("¿Borrar tu detalle local?")) {
-            cuenta = {};
-            totalYaEnviado = 0;
-            actualizarVista();
-        }
-    }
-
-    window.resetMesaCompleta = function() {
-        if(confirm("¿Resetear toda la mesa en Firebase?")) {
-            set(ref(db, 'mesa_actual'), { BF:0, ML:0, LM:0, EJ:0 });
-        }
-    }
-
-    renderizarBotones();
-    actualizarVista();
-</script>
-</body>
-</html>
+            {
